@@ -1,6 +1,4 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
+<html lang="zh-CN"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>局域网快传</title>
@@ -15,7 +13,7 @@ h2{font-size:16px;margin:0 0 12px;font-weight:600}
 .hidden{display:none!important}
 button{font:inherit;font-size:15px;font-weight:500;padding:12px 16px;border-radius:10px;border:1px solid var(--line);background:#232833;color:var(--text);cursor:pointer;width:100%;margin-bottom:10px}
 button:active{filter:brightness(1.3)}
-button:disabled{opacity:.5}
+button:disabled{opacity:.5;cursor:not-allowed}
 button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
 textarea{width:100%;min-height:90px;padding:10px;border-radius:10px;background:#0c0e12;color:var(--text);border:1px solid var(--line);font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;resize:vertical;margin-bottom:10px;word-break:break-all}
 p{margin:0 0 10px;color:var(--muted);font-size:14px}
@@ -38,72 +36,72 @@ input[type=file]{width:100%;margin-bottom:10px;color:var(--text);font-size:14px}
 <h1>📡 局域网快传</h1>
 
 <div id="viewHome" class="card">
-  <p>两台设备各打开这个页面，一台选发送方，一台选接收方。文件点对点直传，不经过任何服务器。</p>
-  <button id="btnRoleSend" class="primary">我是发送方</button>
-  <button id="btnRoleRecv">我是接收方</button>
+  <p>两台设备各打开这个页面（建议用系统自带浏览器），一台选发送方，一台选接收方。文件点对点直传，不经过服务器。</p>
+  <button id="btnRoleSend" class="primary">我是发送方 (传文件出去)</button>
+  <button id="btnRoleRecv">我是接收方 (收文件进来)</button>
 </div>
 
 <!-- 发送方 -->
 <div id="viewSend" class="hidden">
   <div class="card">
-    <h2>发送方 · 第 1 步</h2>
-    <button id="btnMakeOffer" class="primary">生成连接码</button>
-    <div id="offerWrap" class="hidden">
-      <p>把下面这段码发给对方（微信、短信、AirDrop 都行），让对方粘贴：</p>
-      <textarea id="offerCode" readonly></textarea>
-      <button id="btnCopyOffer">复制连接码</button>
-    </div>
+	<h2>发送方 · 第 1 步</h2>
+	<button id="btnMakeOffer" class="primary">1. 生成连接码</button>
+	<div id="offerWrap" class="hidden">
+	  <p>把下面这段码发给对方（微信、短信都行），让对方粘贴到他的页面里：</p>
+	  <textarea id="offerCode" readonly=""></textarea>
+	  <button id="btnCopyOffer">复制连接码</button>
+	</div>
   </div>
 
   <div id="answerWrap" class="card hidden">
-    <h2>发送方 · 第 2 步</h2>
-    <p>把对方给你的回执码粘贴到这里：</p>
-    <textarea id="answerInput" placeholder="粘贴回执码…"></textarea>
-    <div class="row">
-      <button id="btnPasteAnswer">从剪贴板粘贴</button>
-      <button id="btnApplyAnswer" class="primary">完成连接</button>
-    </div>
+	<h2>发送方 · 第 2 步</h2>
+	<p>把对方生成的“回执码”粘贴到这里，然后点完成（<b>点一次即可，请耐心等待</b>）：</p>
+	<textarea id="answerInput" placeholder="粘贴对方的回执码…"></textarea>
+	<div class="row">
+	  <button id="btnPasteAnswer">从剪贴板粘贴</button>
+	  <button id="btnApplyAnswer" class="primary">完成连接</button>
+	</div>
   </div>
 
   <div id="sendTransfer" class="card hidden">
-    <h2>选择文件发送</h2>
-    <input type="file" id="fileInput" multiple>
-    <button id="btnSendFiles" class="primary">开始发送</button>
-    <div id="sendStatus" class="status"></div>
-    <div class="bar"><div id="sendBar"></div></div>
+	<h2>选择文件发送</h2>
+	<input type="file" id="fileInput" multiple="">
+	<button id="btnSendFiles" class="primary">开始发送</button>
+	<div id="sendStatus" class="status"></div>
+	<div class="bar"><div id="sendBar"></div></div>
   </div>
 
-  <a href="#" class="link" id="backFromSend">← 返回</a>
+  <a href="#" class="link" id="backFromSend">← 重新开始</a>
 </div>
 
 <!-- 接收方 -->
 <div id="viewRecv" class="hidden">
   <div class="card">
-    <h2>接收方 · 第 1 步</h2>
-    <p>把发送方给你的连接码粘贴到这里：</p>
-    <textarea id="offerInput" placeholder="粘贴连接码…"></textarea>
-    <div class="row">
-      <button id="btnPasteOffer">从剪贴板粘贴</button>
-      <button id="btnMakeAnswer" class="primary">生成回执码</button>
-    </div>
+	<h2>接收方 · 第 1 步</h2>
+	<p>把发送方给你的“连接码”粘贴到这里：</p>
+	<textarea id="offerInput" placeholder="粘贴发送方的连接码…"></textarea>
+	<div class="row">
+	  <button id="btnPasteOffer">从剪贴板粘贴</button>
+	  <button id="btnMakeAnswer" class="primary">生成回执码</button>
+	</div>
   </div>
 
   <div id="recvAnswerWrap" class="card hidden">
-    <h2>接收方 · 第 2 步</h2>
-    <p id="recvAnswerTip">把这段回执码发回给发送方：</p>
-    <textarea id="answerCode" readonly></textarea>
-    <button id="btnCopyAnswer">复制回执码</button>
+	<h2>接收方 · 第 2 步</h2>
+	<p id="recvAnswerTip">把这段回执码复制，发回给发送方：</p>
+	<textarea id="answerCode" readonly=""></textarea>
+	<button id="btnCopyAnswer">复制回执码</button>
   </div>
 
   <div id="recvTransfer" class="card hidden">
-    <h2>接收</h2>
-    <div id="recvStatus" class="status">等待对方发送…</div>
-    <div class="bar"><div id="recvBar"></div></div>
-    <div id="recvFiles"></div>
-    <p class="tip">如果浏览器没自动保存，点上面文件名的「保存」即可。iOS 建议单文件不超过 200MB。</p>
+	<h2>接收区</h2>
+	<div id="recvStatus" class="status">等待对方发送…</div>
+	<div class="bar"><div id="recvBar"></div></div>
+	<div id="recvFiles"></div>
+	<p class="tip">浏览器会自动保存文件。如果没有自动保存，点上面文件名的「保存」按钮。</p>
   </div>
 
-  <a href="#" class="link" id="backFromRecv">← 返回</a>
+  <a href="#" class="link" id="backFromRecv">← 重新开始</a>
 </div>
 
 </div>
@@ -113,11 +111,11 @@ input[type=file]{width:100%;margin-bottom:10px;color:var(--text);font-size:14px}
 'use strict';
 const $ = id => document.getElementById(id);
 
-/* ---------- base64（URL 安全） ---------- */
+/* ---------- base64 & 压缩 ---------- */
 const b64 = u8 => {
   let s = '';
   for (let i = 0; i < u8.length; i += 0x8000)
-    s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
+	s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
   return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 };
 const unb64 = str => {
@@ -127,16 +125,14 @@ const unb64 = str => {
   for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
   return u8;
 };
-
-/* ---------- 信令压缩 ---------- */
 async function packSignal(obj) {
   const data = new TextEncoder().encode(JSON.stringify(obj));
   if (typeof CompressionStream !== 'undefined') {
-    try {
-      const st = new Blob([data]).stream().pipeThrough(new CompressionStream('deflate-raw'));
-      const buf = await new Response(st).arrayBuffer();
-      return 'z' + b64(new Uint8Array(buf));
-    } catch (e) {}
+	try {
+	  const st = new Blob([data]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+	  const buf = await new Response(st).arrayBuffer();
+	  return 'z' + b64(new Uint8Array(buf));
+	} catch (e) {}
   }
   return 'p' + b64(data);
 }
@@ -146,12 +142,12 @@ async function unpackSignal(code) {
   const tag = code[0];
   let u8 = unb64(code.slice(1));
   if (tag === 'z') {
-    if (typeof DecompressionStream === 'undefined')
-      throw new Error('当前浏览器不支持解压连接码');
-    const st = new Blob([u8]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
-    u8 = new Uint8Array(await new Response(st).arrayBuffer());
+	if (typeof DecompressionStream === 'undefined')
+	  throw new Error('当前浏览器不支持解压连接码');
+	const st = new Blob([u8]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+	u8 = new Uint8Array(await new Response(st).arrayBuffer());
   } else if (tag !== 'p') {
-    throw new Error('连接码格式不对');
+	throw new Error('连接码格式不对');
   }
   return JSON.parse(new TextDecoder().decode(u8));
 }
@@ -164,7 +160,6 @@ const fmtSize = n => {
   return (n / 1073741824).toFixed(2) + ' GB';
 };
 function setStatus(id, text) { const el = $(id); if (el) el.textContent = text; }
-
 async function copyText(el) {
   try { await navigator.clipboard.writeText(el.value); return true; } catch (e) {}
   const ro = el.readOnly; el.readOnly = false; el.select();
@@ -175,8 +170,8 @@ async function copyText(el) {
 }
 async function pasteInto(el) {
   try {
-    const t = await navigator.clipboard.readText();
-    if (t) { el.value = t; return true; }
+	const t = await navigator.clipboard.readText();
+	if (t) { el.value = t; return true; }
   } catch (e) {}
   el.focus();
   return false;
@@ -185,14 +180,18 @@ async function pasteInto(el) {
 /* ---------- WebRTC ---------- */
 const CHUNK = 64 * 1024;
 const HIGH = 4 * 1024 * 1024;
-
 let pc = null, dc = null, role = null;
+let isConnecting = false; // 防止重复点
 
 function newPC() {
-  const p = new RTCPeerConnection({ iceServers: [] });
+  // 稍微加入公共 STUN 兜底，局域网通常不需要，但以防路由限制
+  const p = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+  
   p.onconnectionstatechange = () => {
-    if (p.connectionState === 'failed')
-      setStatus(role === 'send' ? 'sendStatus' : 'recvStatus', '⚠️ 连接失败，请重新生成连接码（部分路由器禁止设备互访）');
+	console.log('Connection State:', p.connectionState);
+	if (p.connectionState === 'failed') {
+	  setStatus(role === 'send' ? 'sendStatus' : 'recvStatus', '⚠️ 连接失败：请检查两台设备是否在同一 WiFi 下，部分路由器的“AP隔离”会导致无法直连。');
+	}
   };
   p.ondatachannel = e => wireChannel(e.channel);
   return p;
@@ -200,13 +199,13 @@ function newPC() {
 
 function waitIce(p) {
   return new Promise(resolve => {
-    if (p.iceGatheringState === 'complete') return resolve();
-    let done = false;
-    const finish = () => { if (!done) { done = true; resolve(); } };
-    const timer = setTimeout(finish, 2500);
-    p.addEventListener('icegatheringstatechange', () => {
-      if (p.iceGatheringState === 'complete') { clearTimeout(timer); finish(); }
-    });
+	if (p.iceGatheringState === 'complete') return resolve();
+	let done = false;
+	const finish = () => { if (!done) { done = true; resolve(); } };
+	const timer = setTimeout(finish, 2000); // 缩短等待时间
+	p.addEventListener('icegatheringstatechange', () => {
+	  if (p.iceGatheringState === 'complete') { clearTimeout(timer); finish(); }
+	});
   });
 }
 
@@ -214,24 +213,23 @@ function wireChannel(ch) {
   dc = ch;
   dc.binaryType = 'arraybuffer';
   dc.bufferedAmountLowThreshold = HIGH / 2;
-  dc.onopen = onConnected;
+  dc.onopen = () => {
+	isConnecting = false;
+	if (role === 'send') {
+	  $('sendTransfer').classList.remove('hidden');
+	  $('answerWrap').classList.add('hidden');
+	  setStatus('sendStatus', '✅ 已连接，选择文件后点发送');
+	} else {
+	  $('recvTransfer').classList.remove('hidden');
+	  $('recvAnswerTip').textContent = '已连接！等待对方发送文件…';
+	  setStatus('recvStatus', '✅ 已连接，等待对方发送…');
+	}
+  };
   dc.onclose = () => {
-    setStatus('sendStatus', '连接已关闭');
-    setStatus('recvStatus', '连接已关闭');
+	setStatus('sendStatus', '连接已断开');
+	setStatus('recvStatus', '连接已断开');
   };
   dc.onmessage = onDCMessage;
-}
-
-function onConnected() {
-  if (role === 'send') {
-    $('sendTransfer').classList.remove('hidden');
-    $('answerWrap').classList.add('hidden');
-    setStatus('sendStatus', '✅ 已连接，选择文件后点发送');
-  } else {
-    $('recvTransfer').classList.remove('hidden');
-    $('recvAnswerTip').textContent = '已连接！等待对方发送文件…';
-    setStatus('recvStatus', '✅ 已连接，等待对方发送…');
-  }
 }
 
 /* ---------- 角色切换 ---------- */
@@ -254,21 +252,25 @@ $('backFromRecv').onclick = e => { e.preventDefault(); location.reload(); };
 $('btnMakeOffer').onclick = async () => {
   const btn = $('btnMakeOffer');
   btn.disabled = true; btn.textContent = '生成中…';
+  isConnecting = false;
   try {
-    pc = newPC();
-    wireChannel(pc.createDataChannel('file', { ordered: true }));
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-    await waitIce(pc);
-    const code = await packSignal({ type: 'offer', sdp: pc.localDescription.sdp });
-    $('offerCode').value = code;
-    $('offerWrap').classList.remove('hidden');
-    $('answerWrap').classList.remove('hidden');
-    btn.textContent = '重新生成连接码';
-    btn.disabled = false;
+	pc = newPC();
+	wireChannel(pc.createDataChannel('file', { ordered: true }));
+	const offer = await pc.createOffer();
+	await pc.setLocalDescription(offer);
+	await waitIce(pc);
+	const code = await packSignal({ type: 'offer', sdp: pc.localDescription.sdp });
+	$('offerCode').value = code;
+	$('offerWrap').classList.remove('hidden');
+	$('answerWrap').classList.remove('hidden');
+	btn.textContent = '重新生成连接码 (会覆盖旧的)';
+	btn.disabled = false;
+	$('answerInput').value = '';
+	$('btnApplyAnswer').disabled = false;
+	$('btnApplyAnswer').textContent = '完成连接';
   } catch (e) {
-    alert('生成失败：' + e.message);
-    btn.disabled = false; btn.textContent = '生成连接码';
+	alert('生成失败：' + e.message);
+	btn.disabled = false; btn.textContent = '生成连接码';
   }
 };
 
@@ -279,35 +281,51 @@ $('btnMakeAnswer').onclick = async () => {
   const btn = $('btnMakeAnswer');
   btn.disabled = true; btn.textContent = '生成中…';
   try {
-    const sig = await unpackSignal(code);
-    if (sig.type !== 'offer') throw new Error('这不是发送方的连接码');
-    pc = newPC();
-    await pc.setRemoteDescription({ type: 'offer', sdp: sig.sdp });
-    const ans = await pc.createAnswer();
-    await pc.setLocalDescription(ans);
-    await waitIce(pc);
-    const out = await packSignal({ type: 'answer', sdp: pc.localDescription.sdp });
-    $('answerCode').value = out;
-    $('recvAnswerWrap').classList.remove('hidden');
-    btn.textContent = '重新生成回执码';
-    btn.disabled = false;
+	const sig = await unpackSignal(code);
+	if (sig.type !== 'offer') throw new Error('这不是发送方的连接码');
+	
+	if (pc) pc.close(); // 重置旧的
+	pc = newPC();
+	
+	await pc.setRemoteDescription({ type: 'offer', sdp: sig.sdp });
+	const ans = await pc.createAnswer();
+	await pc.setLocalDescription(ans);
+	await waitIce(pc);
+	const out = await packSignal({ type: 'answer', sdp: pc.localDescription.sdp });
+	$('answerCode').value = out;
+	$('recvAnswerWrap').classList.remove('hidden');
+	btn.textContent = '重新生成回执码 (会覆盖旧的)';
+	btn.disabled = false;
   } catch (e) {
-    alert('失败：' + e.message);
-    btn.disabled = false; btn.textContent = '生成回执码';
+	alert('失败：' + e.message);
+	btn.disabled = false; btn.textContent = '生成回执码';
   }
 };
 
-/* ---------- 发送方：应用 answer ---------- */
+/* ---------- 发送方：应用 answer (修复防呆) ---------- */
 $('btnApplyAnswer').onclick = async () => {
   const code = $('answerInput').value.trim();
   if (!code) return alert('先粘贴回执码');
+  if (isConnecting) return alert('正在连接中，请稍安勿躁…');
+  if (pc.signalingState === 'stable') {
+	return alert('状态已稳定。如果没连上，请返回重新生成连接码。');
+  }
+
+  const btn = $('btnApplyAnswer');
+  isConnecting = true;
+  btn.disabled = true; // 禁用按钮防止连点
+  btn.textContent = '等待建立连接…';
+
   try {
-    const sig = await unpackSignal(code);
-    if (sig.type !== 'answer') throw new Error('这不是回执码');
-    await pc.setRemoteDescription({ type: 'answer', sdp: sig.sdp });
-    $('btnApplyAnswer').textContent = '已提交，等待连接…';
+	const sig = await unpackSignal(code);
+	if (sig.type !== 'answer') throw new Error('这不是回执码');
+	await pc.setRemoteDescription({ type: 'answer', sdp: sig.sdp });
+	// 成功提交后，等待 onconnectionstatechange 触发
   } catch (e) {
-    alert('连接失败：' + e.message);
+	alert('连接失败：' + e.message + '\n如果反复失败，请重新生成连接码再试。');
+	isConnecting = false;
+	btn.disabled = false;
+	btn.textContent = '完成连接';
   }
 };
 
@@ -329,14 +347,14 @@ $('btnPasteOffer').onclick = async () => {
   if (!await pasteInto($('offerInput'))) alert('无法自动读取剪贴板，请长按输入框手动粘贴');
 };
 
-/* ---------- 发送 ---------- */
+/* ---------- 发送数据 ---------- */
 function waitDrain() {
   if (!dc || dc.readyState !== 'open') return Promise.reject(new Error('连接已关闭'));
   if (dc.bufferedAmount < HIGH) return Promise.resolve();
   return new Promise((res, rej) => {
-    const on = () => { dc.removeEventListener('bufferedamountlow', on); res(); };
-    dc.addEventListener('bufferedamountlow', on);
-    dc.addEventListener('close', () => rej(new Error('连接已关闭')), { once: true });
+	const on = () => { dc.removeEventListener('bufferedamountlow', on); res(); };
+	dc.addEventListener('bufferedamountlow', on);
+	dc.addEventListener('close', () => rej(new Error('连接已关闭')), { once: true });
   });
 }
 
@@ -348,25 +366,25 @@ async function sendAll(files) {
   dc.send(JSON.stringify({ t: 'batch', count: list.length }));
 
   for (let i = 0; i < list.length; i++) {
-    const f = list[i];
-    dc.send(JSON.stringify({
-      t: 'start', name: f.name, size: f.size,
-      mime: f.type || 'application/octet-stream'
-    }));
+	const f = list[i];
+	dc.send(JSON.stringify({
+	  t: 'start', name: f.name, size: f.size,
+	  mime: f.type || 'application/octet-stream'
+	}));
 
-    let offset = 0;
-    while (offset < f.size) {
-      await waitDrain();
-      const buf = await f.slice(offset, offset + CHUNK).arrayBuffer();
-      dc.send(buf);
-      offset += buf.byteLength;
-      sentBytes += buf.byteLength;
-      $('sendBar').style.width = (sentBytes / totalBytes * 100).toFixed(1) + '%';
-      setStatus('sendStatus',
-        `正在发送 ${i + 1}/${list.length}：${f.name}\n` +
-        `${fmtSize(offset)} / ${fmtSize(f.size)}  ·  总计 ${(sentBytes / totalBytes * 100).toFixed(0)}%`);
-    }
-    dc.send(JSON.stringify({ t: 'end' }));
+	let offset = 0;
+	while (offset < f.size) {
+	  await waitDrain();
+	  const buf = await f.slice(offset, offset + CHUNK).arrayBuffer();
+	  dc.send(buf);
+	  offset += buf.byteLength;
+	  sentBytes += buf.byteLength;
+	  $('sendBar').style.width = (sentBytes / totalBytes * 100).toFixed(1) + '%';
+	  setStatus('sendStatus',
+		`正在发送 ${i + 1}/${list.length}：${f.name}\n` +
+		`${fmtSize(offset)} / ${fmtSize(f.size)}  ·  总计 ${(sentBytes / totalBytes * 100).toFixed(0)}%`);
+	}
+	dc.send(JSON.stringify({ t: 'end' }));
   }
 }
 
@@ -376,45 +394,45 @@ $('btnSendFiles').onclick = async () => {
   const btn = $('btnSendFiles');
   btn.disabled = true;
   try {
-    await sendAll(files);
-    setStatus('sendStatus', '🎉 全部发送完成');
-    $('sendBar').style.width = '100%';
+	await sendAll(files);
+	setStatus('sendStatus', '🎉 全部发送完成');
+	$('sendBar').style.width = '100%';
   } catch (e) {
-    setStatus('sendStatus', '❌ 发送失败：' + e.message);
+	setStatus('sendStatus', '❌ 发送失败：' + e.message);
   }
   btn.disabled = false;
 };
 
-/* ---------- 接收 ---------- */
+/* ---------- 接收数据 ---------- */
 let recvFile = null, recvBatchTotal = 0, recvDone = 0;
 let recvTotalBytes = 0, recvDoneBytes = 0;
 
 function onDCMessage(e) {
   if (typeof e.data === 'string') {
-    let msg;
-    try { msg = JSON.parse(e.data); } catch (_) { return; }
-    if (msg.t === 'batch') {
-      recvBatchTotal = msg.count; recvDone = 0;
-      recvTotalBytes = 0; recvDoneBytes = 0;
-      $('recvFiles').innerHTML = '';
-      $('recvBar').style.width = '0%';
-    } else if (msg.t === 'start') {
-      recvFile = { name: msg.name, size: msg.size, mime: msg.mime, chunks: [], got: 0 };
-      recvTotalBytes += msg.size;
-      setStatus('recvStatus',
-        `接收中 ${recvDone + 1}/${recvBatchTotal}：${msg.name}\n0 B / ${fmtSize(msg.size)}`);
-    } else if (msg.t === 'end') {
-      if (recvFile) finishRecvFile();
-    }
+	let msg;
+	try { msg = JSON.parse(e.data); } catch (_) { return; }
+	if (msg.t === 'batch') {
+	  recvBatchTotal = msg.count; recvDone = 0;
+	  recvTotalBytes = 0; recvDoneBytes = 0;
+	  $('recvFiles').innerHTML = '';
+	  $('recvBar').style.width = '0%';
+	} else if (msg.t === 'start') {
+	  recvFile = { name: msg.name, size: msg.size, mime: msg.mime, chunks: [], got: 0 };
+	  recvTotalBytes += msg.size;
+	  setStatus('recvStatus',
+		`接收中 ${recvDone + 1}/${recvBatchTotal}：${msg.name}\n0 B / ${fmtSize(msg.size)}`);
+	} else if (msg.t === 'end') {
+	  if (recvFile) finishRecvFile();
+	}
   } else {
-    if (!recvFile) return;
-    recvFile.chunks.push(e.data);
-    recvFile.got += e.data.byteLength;
-    recvDoneBytes += e.data.byteLength;
-    $('recvBar').style.width = (recvDoneBytes / (recvTotalBytes || 1) * 100).toFixed(1) + '%';
-    setStatus('recvStatus',
-      `接收中 ${recvDone + 1}/${recvBatchTotal}：${recvFile.name}\n` +
-      `${fmtSize(recvFile.got)} / ${fmtSize(recvFile.size)}  ·  总计 ${(recvDoneBytes / (recvTotalBytes || 1) * 100).toFixed(0)}%`);
+	if (!recvFile) return;
+	recvFile.chunks.push(e.data);
+	recvFile.got += e.data.byteLength;
+	recvDoneBytes += e.data.byteLength;
+	$('recvBar').style.width = (recvDoneBytes / (recvTotalBytes || 1) * 100).toFixed(1) + '%';
+	setStatus('recvStatus',
+	  `接收中 ${recvDone + 1}/${recvBatchTotal}：${recvFile.name}\n` +
+	  `${fmtSize(recvFile.got)} / ${fmtSize(recvFile.size)}  ·  总计 ${(recvDoneBytes / (recvTotalBytes || 1) * 100).toFixed(0)}%`);
   }
 }
 
@@ -427,7 +445,6 @@ function finishRecvFile() {
 
   const url = URL.createObjectURL(blob);
 
-  // 文件行（手动保存兜底）
   const row = document.createElement('div');
   row.className = 'fileitem';
   const nm = document.createElement('span');
@@ -438,22 +455,21 @@ function finishRecvFile() {
   row.appendChild(nm); row.appendChild(a);
   $('recvFiles').appendChild(row);
 
-  // 尝试自动下载
   setTimeout(() => {
-    const tmp = document.createElement('a');
-    tmp.href = url; tmp.download = f.name;
-    document.body.appendChild(tmp);
-    tmp.click();
-    tmp.remove();
+	const tmp = document.createElement('a');
+	tmp.href = url; tmp.download = f.name;
+	document.body.appendChild(tmp);
+	tmp.click();
+	tmp.remove();
   }, 60);
 
   if (recvDone >= recvBatchTotal) {
-    setStatus('recvStatus', `🎉 全部接收完成（共 ${recvBatchTotal} 个文件）`);
-    $('recvBar').style.width = '100%';
+	setStatus('recvStatus', `🎉 全部接收完成（共 ${recvBatchTotal} 个文件）`);
+	$('recvBar').style.width = '100%';
   }
 }
 
 })();
 </script>
-</body>
-</html>
+
+</body></html>
