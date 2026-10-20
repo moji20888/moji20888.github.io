@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>局域网快传</title>
+<title>局域网快传 (极速稳定版)</title>
 <style>
 :root{--bg:#0f1115;--card:#1a1d24;--line:#2a2f3a;--text:#e6e8ee;--muted:#8b94a7;--accent:#4c8dff}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -39,7 +39,7 @@ input[type=file]{width:100%;margin-bottom:10px;color:var(--text);font-size:14px}
 <h1>📡 局域网快传</h1>
 
 <div id="viewHome" class="card">
-  <p>两台设备各打开这个页面，一台选发送方，一台选接收方。</p>
+  <p>两台设备各打开这个页面，一台选发送方，一台选接收方。<br><b>注意：传输期间请勿锁屏或切到后台。</b></p>
   <button id="btnRoleSend" class="primary">我是发送方 (传文件出去)</button>
   <button id="btnRoleRecv">我是接收方 (收文件进来)</button>
 </div>
@@ -115,6 +115,19 @@ input[type=file]{width:100%;margin-bottom:10px;color:var(--text);font-size:14px}
 'use strict';
 const $ = id => document.getElementById(id);
 
+/* ---------- 屏幕常亮 (保持唤醒) ---------- */
+let wakeLock = null;
+async function requestWakeLock() {
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+      logDiag("已开启屏幕常亮");
+    }
+  } catch (err) {
+    console.log("WakeLock not supported or failed:", err);
+  }
+}
+
 /* ---------- base64 & 压缩 ---------- */
 const b64 = u8 => {
   let s = '';
@@ -182,35 +195,38 @@ async function pasteInto(el) {
 }
 
 /* ---------- WebRTC ---------- */
-const CHUNK = 64 * 1024;
-const HIGH = 4 * 1024 * 1024;
+const CHUNK = 16 * 1024; // 16KB 黄金分块，跨平台最稳
+const HIGH = 1 * 1024 * 1024; // 缓冲上限降到 1MB，防止苹果设备内存溢出
 let pc = null, dc = null, role = null;
 let isConnecting = false;
 
 function logDiag(msg) {
   console.log(msg);
-  if (role === 'send') $('diagSend').textContent = msg;
-  if (role === 'recv') $('diagRecv').textContent = msg;
+  if (role === 'send' && $('diagSend')) $('diagSend').textContent = msg;
+  if (role === 'recv' && $('diagRecv')) $('diagRecv').textContent = msg;
 }
 
 function newPC() {
-  // 换成国内可能生效的 STUN，纯局域网其实不需要，加了更保险
-  const p = new RTCPeerConnection({ 
-    iceServers: [{ urls: 'stun:stun.qq.com' }] 
-  });
+  const p = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.qq.com' }] });
   
   p.onicecandidateerror = e => {
-    logDiag("网络检测报错(不影响局域网): " + e.errorText);
+    console.warn("STUN报错:", e.errorText);
   };
 
   p.onconnectionstatechange = () => {
     logDiag("底层状态: " + p.connectionState);
-    if (p.connectionState === 'failed') {
-      logDiag("⚠️ 连接失败！请确认两个设备连的是同一个 WiFi，且路由器未开启 AP 隔离。");
+    if (p.connectionState === 'failed' || p.connectionState === 'disconnected') {
+      if (dc && dc.readyState === 'open') {
+         // 有些时候是短暂波动，先别急着报错
+         logDiag("网络波动，尝试重连中...");
+      } else {
+         logDiag("⚠️ 连接中断！可能因为切了后台、锁屏或 WiFi 不稳定。");
+         setStatus('sendStatus', '连接已断开');
+         setStatus('recvStatus', '连接已断开');
+         const btn = $('btnSendFiles');
+         if(btn) btn.disabled = false;
+      }
     }
-  };
-  p.oniceconnectionstatechange = () => {
-    logDiag("通道检测: " + p.iceConnectionState);
   };
   p.ondatachannel = e => wireChannel(e.channel);
   return p;
@@ -221,7 +237,7 @@ function waitIce(p) {
     if (p.iceGatheringState === 'complete') return resolve();
     let done = false;
     const finish = () => { if (!done) { done = true; resolve(); } };
-    const timer = setTimeout(finish, 2000); // 最多等2秒收集局域网IP
+    const timer = setTimeout(finish, 2000); 
     p.addEventListener('icegatheringstatechange', () => {
       if (p.iceGatheringState === 'complete') { clearTimeout(timer); finish(); }
     });
@@ -232,9 +248,11 @@ function wireChannel(ch) {
   dc = ch;
   dc.binaryType = 'arraybuffer';
   dc.bufferedAmountLowThreshold = HIGH / 2;
+  
   dc.onopen = () => {
     isConnecting = false;
     logDiag("✅ 通道已建立！");
+    requestWakeLock(); // 连上后请求屏幕常亮
     if (role === 'send') {
       $('sendTransfer').classList.remove('hidden');
       $('answerWrap').classList.add('hidden');
@@ -245,11 +263,15 @@ function wireChannel(ch) {
       setStatus('recvStatus', '✅ 已连接，等待对方发送…');
     }
   };
+  
   dc.onclose = () => {
-    logDiag("连接已断开");
-    setStatus('sendStatus', '连接已断开');
-    setStatus('recvStatus', '连接已断开');
+    logDiag("❌ 数据通道已关闭");
+    setStatus('sendStatus', '❌ 连接断开，请重新刷新页面配对');
+    setStatus('recvStatus', '❌ 连接断开，请重新刷新页面配对');
+    const btn = $('btnSendFiles');
+    if(btn) { btn.disabled = false; btn.textContent = '重新发送 (需重连)'; }
   };
+  
   dc.onmessage = onDCMessage;
 }
 
@@ -350,29 +372,37 @@ $('btnApplyAnswer').onclick = async () => {
 /* ---------- 复制 / 粘贴按钮 ---------- */
 $('btnCopyOffer').onclick = async () => {
   const ok = await copyText($('offerCode'));
-  $('btnCopyOffer').textContent = ok ? '✅ 已复制' : '复制失败，请长按输入框手动复制';
+  $('btnCopyOffer').textContent = ok ? '✅ 已复制' : '复制失败，请长按手动复制';
   setTimeout(() => $('btnCopyOffer').textContent = '复制连接码', 1800);
 };
 $('btnCopyAnswer').onclick = async () => {
   const ok = await copyText($('answerCode'));
-  $('btnCopyAnswer').textContent = ok ? '✅ 已复制' : '复制失败，请长按输入框手动复制';
+  $('btnCopyAnswer').textContent = ok ? '✅ 已复制' : '复制失败，请长按手动复制';
   setTimeout(() => $('btnCopyAnswer').textContent = '复制回执码', 1800);
 };
 $('btnPasteAnswer').onclick = async () => {
-  if (!await pasteInto($('answerInput'))) alert('无法自动读取剪贴板，请长按输入框手动粘贴');
+  if (!await pasteInto($('answerInput'))) alert('请长按输入框手动粘贴');
 };
 $('btnPasteOffer').onclick = async () => {
-  if (!await pasteInto($('offerInput'))) alert('无法自动读取剪贴板，请长按输入框手动粘贴');
+  if (!await pasteInto($('offerInput'))) alert('请长按输入框手动粘贴');
 };
 
-/* ---------- 发送数据 ---------- */
+/* ---------- 发送数据 (增加了严谨的异常捕获) ---------- */
 function waitDrain() {
-  if (!dc || dc.readyState !== 'open') return Promise.reject(new Error('连接已关闭'));
+  if (!dc || dc.readyState !== 'open') return Promise.reject(new Error('连接已断开'));
   if (dc.bufferedAmount < HIGH) return Promise.resolve();
   return new Promise((res, rej) => {
-    const on = () => { dc.removeEventListener('bufferedamountlow', on); res(); };
+    const timeout = setTimeout(() => rej(new Error('发送超时，网络可能已断开')), 15000); // 15秒超时保护
+    const on = () => { 
+      clearTimeout(timeout);
+      dc.removeEventListener('bufferedamountlow', on); 
+      res(); 
+    };
     dc.addEventListener('bufferedamountlow', on);
-    dc.addEventListener('close', () => rej(new Error('连接已关闭')), { once: true });
+    dc.addEventListener('close', () => {
+      clearTimeout(timeout);
+      rej(new Error('连接已断开'));
+    }, { once: true });
   });
 }
 
@@ -381,28 +411,35 @@ async function sendAll(files) {
   const totalBytes = list.reduce((a, f) => a + f.size, 0) || 1;
   let sentBytes = 0;
 
-  dc.send(JSON.stringify({ t: 'batch', count: list.length }));
+  try {
+    dc.send(JSON.stringify({ t: 'batch', count: list.length }));
 
-  for (let i = 0; i < list.length; i++) {
-    const f = list[i];
-    dc.send(JSON.stringify({
-      t: 'start', name: f.name, size: f.size,
-      mime: f.type || 'application/octet-stream'
-    }));
+    for (let i = 0; i < list.length; i++) {
+      const f = list[i];
+      dc.send(JSON.stringify({
+        t: 'start', name: f.name, size: f.size,
+        mime: f.type || 'application/octet-stream'
+      }));
 
-    let offset = 0;
-    while (offset < f.size) {
-      await waitDrain();
-      const buf = await f.slice(offset, offset + CHUNK).arrayBuffer();
-      dc.send(buf);
-      offset += buf.byteLength;
-      sentBytes += buf.byteLength;
-      $('sendBar').style.width = (sentBytes / totalBytes * 100).toFixed(1) + '%';
-      setStatus('sendStatus',
-        `正在发送 ${i + 1}/${list.length}：${f.name}\n` +
-        `${fmtSize(offset)} / ${fmtSize(f.size)}  ·  总计 ${(sentBytes / totalBytes * 100).toFixed(0)}%`);
+      let offset = 0;
+      while (offset < f.size) {
+        await waitDrain(); // 等待缓冲区清空
+        const buf = await f.slice(offset, offset + CHUNK).arrayBuffer();
+        dc.send(buf);
+        offset += buf.byteLength;
+        sentBytes += buf.byteLength;
+        
+        // 进度条更新
+        $('sendBar').style.width = (sentBytes / totalBytes * 100).toFixed(1) + '%';
+        setStatus('sendStatus',
+          `正在发送 ${i + 1}/${list.length}：${f.name}\n` +
+          `${fmtSize(offset)} / ${fmtSize(f.size)}  ·  总计 ${(sentBytes / totalBytes * 100).toFixed(0)}%`);
+      }
+      dc.send(JSON.stringify({ t: 'end' }));
     }
-    dc.send(JSON.stringify({ t: 'end' }));
+    return true;
+  } catch (err) {
+    throw err; // 抛出错误给外层按钮捕获
   }
 }
 
@@ -411,12 +448,13 @@ $('btnSendFiles').onclick = async () => {
   if (!files || !files.length) return alert('先选择文件');
   const btn = $('btnSendFiles');
   btn.disabled = true;
+  
   try {
     await sendAll(files);
     setStatus('sendStatus', '🎉 全部发送完成');
     $('sendBar').style.width = '100%';
   } catch (e) {
-    setStatus('sendStatus', '❌ 发送失败：' + e.message);
+    setStatus('sendStatus', '❌ 发送中断：' + e.message + '\n请刷新页面重新配对。');
   }
   btn.disabled = false;
 };
